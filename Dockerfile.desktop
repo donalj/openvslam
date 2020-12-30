@@ -1,5 +1,16 @@
-FROM ubuntu:18.04
+
+ARG CUDA_VER=11.0
+ARG PYTORCH_VERSION=1.7.1
+ARG TORCHVISION_VERSION=0.8.2
+ARG UBUNTU_VERSION=18.04
+ARG INSTALL_PREFIX=/usr/local
+ARG NUM_THREADS=16
+
+ARG BASE_IMAGE=nvidia/cuda:${CUDA_VER}-cudnn8-devel-ubuntu${UBUNTU_VERSION}
+
+FROM ${BASE_IMAGE} as dep-base
 ENV DEBIAN_FRONTEND noninteractive
+
 
 # install dependencies via apt
 ENV DEBCONF_NOWARNINGS yes
@@ -10,11 +21,13 @@ RUN set -x && \
   apt-get install -y -qq \
     build-essential \
     pkg-config \
-    cmake \
     git \
     wget \
     curl \
     tar \
+    make \
+    python3 \
+    python3-dev \
     unzip && \
   : "g2o dependencies" && \
   apt-get install -y -qq \
@@ -38,22 +51,67 @@ RUN set -x && \
     libavresample-dev && \
   : "other dependencies" && \
   apt-get install -y -qq \
-    libyaml-cpp-dev && \
+    libyaml-cpp-dev  \
+    libssl-dev && \
   : "remove cache" && \
   apt-get autoremove -y -qq && \
-  rm -rf /var/lib/apt/lists/*
+  rm -rf /var/lib/apt/lists/* && \
+  wget https://github.com/Kitware/CMake/releases/download/v3.19.2/cmake-3.19.2.zip && \
+  unzip cmake-3.19.2.zip && \
+  cd cmake-3.19.2 && \
+  ./bootstrap && \
+  make  -j${NUM_THREADS} && \
+  make install  && \
+  cd .. && rm -rf cmake-3.19.2*
 
-ARG CMAKE_INSTALL_PREFIX=/usr/local
-ARG NUM_THREADS=1
 
+
+# FROM conda-installs AS libtorch-install
+FROM dep-base AS libtorch-install
+ARG CUDA_VER
+ARG PYTORCH_VERSION
+ARG INSTALL_PREFIX
+WORKDIR /tmp
+RUN set -x && \
+  cuda=cu$(echo ${CUDA_VER} | sed 's/\.//') &&\
+  wget -O libtorch.zip https://download.pytorch.org/libtorch/nightly/$cuda/libtorch-cxx11-abi-shared-with-deps-latest.zip && \
+  unzip libtorch.zip -d ${INSTALL_PREFIX} && \
+  rm -rf /tmp/*
+
+
+
+FROM libtorch-install AS build-third-party
+ARG INSTALL_PREFIX
+ARG CMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}
+ARG NUM_THREADS
+# ENV Torch_DIR=${INSTALL_PREFIX}/libtorch
 ENV CPATH=${CMAKE_INSTALL_PREFIX}/include:${CPATH}
 ENV C_INCLUDE_PATH=${CMAKE_INSTALL_PREFIX}/include:${C_INCLUDE_PATH}
 ENV CPLUS_INCLUDE_PATH=${CMAKE_INSTALL_PREFIX}/include:${CPLUS_INCLUDE_PATH}
 ENV LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib:${LIBRARY_PATH}
 ENV LD_LIBRARY_PATH=${CMAKE_INSTALL_PREFIX}/lib:${LD_LIBRARY_PATH}
-
+ENV Torch_DIR=${CMAKE_INSTALL_PREFIX}/libtorch/
 ENV NVIDIA_VISIBLE_DEVICES ${NVIDIA_VISIBLE_DEVICES:-all}
 ENV NVIDIA_DRIVER_CAPABILITIES ${NVIDIA_DRIVER_CAPABILITIES:+$NVIDIA_DRIVER_CAPABILITIES,}graphics
+
+
+ARG TORCHVISION_COMMIT=2f40a483d73018ae6e1488a484c5927f2b309969
+WORKDIR /tmp
+RUN set -x && \
+  git clone https://github.com/pytorch/vision.git && \
+  cd vision && \
+  git checkout ${TORCHVISION_COMMIT} && \
+  mkdir -p build && \
+  cd build && \
+  cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} \
+    -DWITH_CUDA=on \
+    .. && \
+  make -j${NUM_THREADS} && \
+  make install 
+ENV TorchVision_dir=${CMAKE_INSTALL_PREFIX}/vision
+
 
 # Eigen
 ARG EIGEN3_VERSION=3.3.7
@@ -70,9 +128,7 @@ RUN set -x && \
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} \
     .. && \
   make -j${NUM_THREADS} && \
-  make install && \
-  cd /tmp && \
-  rm -rf *
+  make install 
 ENV Eigen3_DIR=${CMAKE_INSTALL_PREFIX}/share/eigen3/cmake
 
 # g2o
@@ -99,9 +155,7 @@ RUN set -x && \
     -DG2O_BUILD_LINKED_APPS=OFF \
     .. && \
   make -j${NUM_THREADS} && \
-  make install && \
-  cd /tmp && \
-  rm -rf *
+  make install
 ENV g2o_DIR=${CMAKE_INSTALL_PREFIX}/lib/cmake/g2o
 
 # OpenCV
@@ -134,9 +188,7 @@ RUN set -x && \
     -DWITH_OPENMP=ON \
     .. && \
   make -j${NUM_THREADS} && \
-  make install && \
-  cd /tmp && \
-  rm -rf *
+  make install
 ENV OpenCV_DIR=${CMAKE_INSTALL_PREFIX}/lib/cmake/opencv4
 
 # DBoW2
@@ -153,9 +205,7 @@ RUN set -x && \
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} \
     .. && \
   make -j${NUM_THREADS} && \
-  make install && \
-  cd /tmp && \
-  rm -rf *
+  make install
 ENV DBoW2_DIR=${CMAKE_INSTALL_PREFIX}/lib/cmake/DBoW2
 
 # Pangolin
@@ -196,28 +246,34 @@ RUN set -x && \
     -DBUILD_PYPANGOLIN_MODULE=OFF \
     .. && \
   make -j${NUM_THREADS} && \
-  make install && \
-  cd /tmp && \
-  rm -rf *
+  make install
 ENV Pangolin_DIR=${CMAKE_INSTALL_PREFIX}/lib/cmake/Pangolin
 
-# OpenVSLAM
-COPY . /openvslam/
-WORKDIR /openvslam/
-RUN set -x && \
-  mkdir -p build && \
-  cd build && \
-  cmake \
-    -DBUILD_WITH_MARCH_NATIVE=OFF \
-    -DUSE_PANGOLIN_VIEWER=ON \
-    -DUSE_SOCKET_PUBLISHER=OFF \
-    -DUSE_STACK_TRACE_LOGGER=ON \
-    -DBOW_FRAMEWORK=DBoW2 \
-    -DBUILD_TESTS=OFF \
-    .. && \
-  make -j${NUM_THREADS} && \
-  rm -rf CMakeCache.txt CMakeFiles Makefile cmake_install.cmake example src && \
-  chmod -R 777 ./*
+FROM build-third-party AS build
+ARG INSTALL_PREFIX
+ARG CMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}
+ARG NUM_THREADS=16
 
-WORKDIR /openvslam/build/
+# OpenVSLAM
+# COPY . /openvslam/
+WORKDIR /openvslam/
+# RUN set -x && \
+#   mkdir -p build && \
+#   cd build && \
+#   cmake \
+#     -DBUILD_WITH_MARCH_NATIVE=OFF \
+#     -DUSE_PANGOLIN_VIEWER=ON \
+#     -DUSE_SOCKET_PUBLISHER=OFF \
+#     -DUSE_STACK_TRACE_LOGGER=ON \
+#     -DBOW_FRAMEWORK=DBoW2 \
+#     -DBUILD_TESTS=OFF \
+#     .. && \
+#   make -j${NUM_THREADS} && \
+#   rm -rf CMakeCache.txt CMakeFiles Makefile cmake_install.cmake example src && \
+#   chmod -R 777 ./* && \
+#   cd /tmp && \
+#   rm -rf *
 ENTRYPOINT ["/bin/bash"]
+
+
+

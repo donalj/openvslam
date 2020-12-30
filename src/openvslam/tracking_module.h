@@ -7,7 +7,7 @@
 #include "openvslam/module/relocalizer.h"
 #include "openvslam/module/keyframe_inserter.h"
 #include "openvslam/module/frame_tracker.h"
-
+#include "openvslam/segment/segmenter.h"
 #include <mutex>
 
 #include <opencv2/core/core.hpp>
@@ -247,6 +247,12 @@ protected:
 
     //! Pause of the tracking module is requested or not
     bool pause_is_requested_ = false;
+
+    //-----------------------------------------
+    // Semantic segmentation
+
+    //! segmenter
+    segment::segmenter segmentation;
 };
 
 } // namespace openvslam

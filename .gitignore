@@ -6,7 +6,7 @@ cmake-build-debug/
 cmake-build-release/
 */.python-version
 *.user
-
+.vscode/
 # Prerequisites
 *.d
 
@@ -39,3 +39,6 @@ cmake-build-release/
 *.exe
 *.out
 *.app
+
+# Pytorch models
+*.pt

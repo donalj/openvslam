@@ -35,6 +35,9 @@ else()
         include_directories(${SUITESPARSE_INCLUDE_DIRS})
     endif()
 endif()
+set(_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/3rd/json/include)
+
+
 
 # ----- Create OpenVSLAM library -----
 
@@ -65,7 +68,7 @@ if(USE_OPENMP)
     find_package(OpenMP)
     if(OpenMP_FOUND)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  ${OpenMP_CXX_FLAGS}")
         target_compile_definitions(${PROJECT_NAME} PUBLIC USE_OPENMP)
         message(STATUS "OpenMP: ENABLED")
     else()
@@ -78,7 +81,7 @@ endif()
 set(USE_SSE_ORB OFF CACHE BOOL "Enable SSE3 instruction for ORB extraction (-msse3)")
 if(USE_SSE_ORB)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse3")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -msse3")
     target_compile_definitions(${PROJECT_NAME} PUBLIC USE_SSE_ORB)
     message(STATUS "SSE3 for ORB extraction (-msse3): ENABLED")
 else()
@@ -88,7 +91,7 @@ endif()
 set(USE_SSE_FP_MATH OFF CACHE BOOL "Enable SSE instruction for floating-point operation (-mfpmath=sse)")
 if(USE_SSE_FP_MATH)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpmath=sse")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpmath=sse")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -mfpmath=sse")
     message(STATUS "SSE for floating-point operation (-mfpmath=sse): ENABLED")
 else()
     message(STATUS "SSE for floating-point operation (-mfpmath=sse): DISABLED")
@@ -116,6 +119,7 @@ message(STATUS "BoW framework: ${BOW_FRAMEWORK} (found in ${BoW_INCLUDE_DIR})")
 # Include directories
 target_include_directories(${PROJECT_NAME}
                            PUBLIC
+                           /usr/local/libtorch/include
                            $<BUILD_INTERFACE:${json_INCLUDE_DIR}>
                            $<BUILD_INTERFACE:${spdlog_INCLUDE_DIR}>
                            $<BUILD_INTERFACE:${BoW_INCLUDE_DIR}>
@@ -131,6 +135,8 @@ target_link_libraries(${PROJECT_NAME}
                       Threads::Threads
                       Eigen3::Eigen
                       yaml-cpp
+                      ${TORCH_LIBRARIES}
+                      TorchVision::TorchVision
                       opencv_core
                       opencv_features2d
                       opencv_calib3d
@@ -171,7 +177,7 @@ install(DIRECTORY ${spdlog_INCLUDE_DIR}
         DESTINATION ${OPENVSLAM_INCLUDE_INSTALL_DIR}/3rd/spdlog)
 
 # ----- Append subdirectory -----
-
+add_subdirectory(segment)
 add_subdirectory(camera)
 add_subdirectory(data)
 add_subdirectory(feature)

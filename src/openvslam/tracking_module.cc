@@ -1,6 +1,7 @@
 #include "openvslam/config.h"
 #include "openvslam/system.h"
 #include "openvslam/tracking_module.h"
+
 #include "openvslam/mapping_module.h"
 #include "openvslam/global_optimization_module.h"
 #include "openvslam/camera/base.h"
@@ -26,6 +27,8 @@ tracking_module::tracking_module(const std::shared_ptr<config>& cfg, system* sys
       frame_tracker_(camera_, 10), relocalizer_(bow_db_), pose_optimizer_(),
       keyfrm_inserter_(cfg_->camera_->setup_type_, cfg_->true_depth_thr_, map_db, bow_db, 0, cfg_->camera_->fps_) {
     spdlog::debug("CONSTRUCT: tracking_module");
+
+    segmentation = segment::segmenter("/openvslam/models/maskrcnn_resnet50_fpn.pt", true);
 
     extractor_left_ = new feature::orb_extractor(cfg_->orb_params_);
     if (camera_->setup_type_ == camera::setup_type_t::Monocular) {
@@ -82,19 +85,25 @@ Mat44_t tracking_module::track_monocular_image(const cv::Mat& img, const double 
     img_gray_ = img;
     util::convert_to_grayscale(img_gray_, camera_->color_order_);
 
+    // Get mask
+    cv::Mat new_mask = segmentation.get_segmentation_mask(img_gray_);
+    (void) mask;
+    // auto new_mask = mask.clone();
+    
     // create current frame object
     if (tracking_state_ == tracker_state_t::NotInitialized || tracking_state_ == tracker_state_t::Initializing) {
-        curr_frm_ = data::frame(img_gray_, timestamp, ini_extractor_left_, bow_vocab_, camera_, cfg_->true_depth_thr_, mask);
+        curr_frm_ = data::frame(img_gray_, timestamp, ini_extractor_left_, bow_vocab_, camera_, cfg_->true_depth_thr_, new_mask);
     }
     else {
-        curr_frm_ = data::frame(img_gray_, timestamp, extractor_left_, bow_vocab_, camera_, cfg_->true_depth_thr_, mask);
+        curr_frm_ = data::frame(img_gray_, timestamp, extractor_left_, bow_vocab_, camera_, cfg_->true_depth_thr_, new_mask);
     }
 
     track();
 
     const auto end = std::chrono::system_clock::now();
     elapsed_ms_ = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
+    cv::subtract(cv::Mat::ones(img.rows, img.cols, CV_8UC1)*255, new_mask, new_mask);
+    cv::subtract(img_gray_, new_mask, img_gray_);
     return curr_frm_.cam_pose_cw_;
 }
 
