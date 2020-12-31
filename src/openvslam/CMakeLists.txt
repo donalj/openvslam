@@ -189,6 +189,7 @@ install(DIRECTORY ${spdlog_INCLUDE_DIR}
         DESTINATION ${OPENVSLAM_INCLUDE_INSTALL_DIR}/3rd/spdlog)
 
 # ----- Append subdirectory -----
+add_subdirectory(pytorch)
 add_subdirectory(segment)
 add_subdirectory(camera)
 add_subdirectory(data)

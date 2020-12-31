@@ -1,8 +1,7 @@
 # Add sources
 target_sources(${PROJECT_NAME}
                PRIVATE
-               ${CMAKE_CURRENT_SOURCE_DIR}/segmenter.h
-               ${CMAKE_CURRENT_SOURCE_DIR}/segmenter.cc)
+               ${CMAKE_CURRENT_SOURCE_DIR}/mask_rcnn.cc)
 
 # Install headers
 file(GLOB HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")

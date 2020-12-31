@@ -28,7 +28,7 @@ tracking_module::tracking_module(const std::shared_ptr<config>& cfg, system* sys
       keyfrm_inserter_(cfg_->camera_->setup_type_, cfg_->true_depth_thr_, map_db, bow_db, 0, cfg_->camera_->fps_) {
     spdlog::debug("CONSTRUCT: tracking_module");
 
-    segmentation = segment::segmenter("/openvslam/models/maskrcnn_resnet50_fpn.pt", true);
+    segmentation = segment::mask_rcnn("/openvslam/models/maskrcnn_resnet50_fpn.pt", true);
 
     extractor_left_ = new feature::orb_extractor(cfg_->orb_params_);
     if (camera_->setup_type_ == camera::setup_type_t::Monocular) {
