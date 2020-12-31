@@ -9,11 +9,13 @@ if [ ! "$(docker ps -q -f name=${NAME})" ]; then
         docker rm ${NAME}
     fi
     echo "Creating container with name: ${NAME}"
+    docker run --rm -it --name openvslam-server --net=host openvslam-server && \
     docker run --runtime=nvidia -it --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix/:/tmp/.X11-unix:ro \
         --volume /data/Datasets/:/dataset:ro \
         --volume /data/Vocab:/vocab:ro \
         --volume $(pwd):/openvslam \
         --name ${NAME} \
+        --net=host \
         openvslam-desktop
 fi
 echo "Container found. Entering"
