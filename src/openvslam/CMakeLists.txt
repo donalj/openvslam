@@ -115,11 +115,13 @@ endif()
 message(STATUS "BoW framework: ${BOW_FRAMEWORK} (found in ${BoW_INCLUDE_DIR})")
 
 # ----- Configure OpenVSLAM library -----
+set(PYTORCH_INCLUDES "/usr/local/include;/usr/local/include/torch;/usr/local/include/torch/torch/csrc/api/include;/usr/local/include/torchvision/;/usr/include/python3.6m/")
+set(CUDA_HOME "/usr/local/cuda/")
 
 # Include directories
 target_include_directories(${PROJECT_NAME}
                            PUBLIC
-                           /usr/local/libtorch/include
+                           ${PYTORCH_INCLUDES}
                            $<BUILD_INTERFACE:${json_INCLUDE_DIR}>
                            $<BUILD_INTERFACE:${spdlog_INCLUDE_DIR}>
                            $<BUILD_INTERFACE:${BoW_INCLUDE_DIR}>
@@ -127,7 +129,10 @@ target_include_directories(${PROJECT_NAME}
                            $<INSTALL_INTERFACE:include/openvslam/3rd/json/include>
                            $<INSTALL_INTERFACE:include/openvslam/3rd/spdlog/include>
                            $<INSTALL_INTERFACE:${BoW_INCLUDE_DIR}>
-                           $<INSTALL_INTERFACE:include/>)
+                           $<INSTALL_INTERFACE:include/>
+                           PRIVATE
+                           ${CUDA_INCLUDE_DIRS}
+                            )
 
 # Link to required libraries
 target_link_libraries(${PROJECT_NAME}
@@ -135,8 +140,14 @@ target_link_libraries(${PROJECT_NAME}
                       Threads::Threads
                       Eigen3::Eigen
                       yaml-cpp
-                      ${TORCH_LIBRARIES}
-                      TorchVision::TorchVision
+                      ${CUDA_LIBRARIES}
+                    #   /usr/local/lib/pytorch/libcaffe2_nvrtc.so
+                      /usr/local/lib/pytorch/libc10.so
+                      /usr/local/lib/pytorch/libc10_cuda.so
+                      /usr/local/lib/pytorch/libtorch.so
+                      /usr/local/lib/pytorch/libtorch_cpu.so
+                      /usr/local/lib/pytorch/libtorch_cuda.so
+                      /usr/local/lib/pytorch/libtorchvision.so
                       opencv_core
                       opencv_features2d
                       opencv_calib3d
@@ -152,7 +163,8 @@ target_link_libraries(${PROJECT_NAME}
                       ${SUITESPARSE_LIBRARIES}
                       ${BoW_LIBRARY}
                       PRIVATE
-                      ${LAPACK_LIBRARIES})
+                      ${LAPACK_LIBRARIES}
+                      ${TORCH_LIBRARIES})
 
 # ----- Install configuration -----
 

@@ -8,14 +8,7 @@
 #include<opencv2/imgproc/imgproc.hpp>
 // #include <torch/torch.h>
 #include <torch/script.h> // One-stop header.
-// #include <torchvision/vision.h>
-// #include <torchvision/PSROIAlign.h>
-// #include <torchvision/PSROIPool.h>
-// #include <torchvision/ROIAlign.h>
-// #include <torchvision/ROIPool.h>
-// #include <torchvision/empty_tensor_op.h>
-// #include <torchvision/nms.h>
-// #include <torchvision/DeformConv.h>
+#include <torchvision/vision.h>
 
 #include <iostream>
 #include <memory>

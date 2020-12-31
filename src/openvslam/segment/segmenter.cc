@@ -1,22 +1,17 @@
 #include "openvslam/segment/segmenter.h"
+#include <torchvision/PSROIAlign.h>
+#include <torchvision/PSROIPool.h>
+#include <torchvision/ROIAlign.h>
+#include <torchvision/ROIPool.h>
+#include <torchvision/empty_tensor_op.h>
+#include <torchvision/nms.h>
+#include <torchvision/DeformConv.h>
 
 namespace openvslam {
 namespace segment {
 
-// static auto registry =
-//         torch::RegisterOperators()
-//                 .op("torchvision::nms", &nms)
-//                 .op("torchvision::roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> Tensor",
-//                     &roi_align)
-//                 .op("torchvision::roi_pool", &roi_pool)
-//                 .op("torchvision::_new_empty_tensor_op", &new_empty_tensor)
-//                 .op("torchvision::ps_roi_align", &ps_roi_align)
-//                 .op("torchvision::ps_roi_pool", &ps_roi_pool)
-//                .op("torchvision::deform_conv2d", &deform_conv2d);
-//             //    .op("torchvision::_cuda_version", &_cuda_version)
-
 segmenter::segmenter(){
-    load_model("./models/maskrcnn_resnet50_fpn.pt");
+    load_model("/openvslam/models/maskrcnn_resnet50_fpn.pt");
     device = torch::DeviceType::CUDA;
     module.to(device);
 }
@@ -39,6 +34,8 @@ void segmenter::load_model(std::string model) {
     }
     catch (const c10::Error& e) {
         std::cerr << "error loading the model\n";
+        std::cerr << e.msg();
+        std::cerr << "\n\n\n\n";
     }
 }
 

@@ -70,10 +70,10 @@ endif()
 # ----- Find dependencies -----
 
 #torch
-set(CMAKE_PREFIX_PATH "/usr/local/include;/usr/local/include/torch;/usr/local/include/torch/torch/csrc/api/include;/usr/local/include/torchvision/torchvision")
-set(TorchVision_DIR "/usr/local/include/torchvision/torchvision")
+set(CMAKE_PREFIX_PATH "/usr/local/include;/usr/local/include/torch;/usr/local/include/torch/torch/csrc/api/include;/usr/local/include/torchvision/;/usr/include/python3.6/")
+# set(TorchVision_DIR "/usr/local/include/torchvision/")
 # find_package(Torch REQUIRED)
-# add_compile_definitions(WITH_CUDA)
+add_compile_definitions(WITH_CUDA)
 #torchvision
 # find_package(TorchVision REQUIRED)
 

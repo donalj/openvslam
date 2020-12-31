@@ -101,7 +101,6 @@ COPY --from=pytorch_image /opt/conda/lib/libmkl_intel_lp64.so /usr/local/lib/pyt
 COPY --from=pytorch_image /opt/conda/lib/libmkl_rt.so /usr/local/lib/pytorch/
 COPY --from=pytorch_image /opt/conda/lib/libmkl_vml_def.so /usr/local/lib/pytorch/
 COPY --from=pytorch_image /opt/conda/lib/libmkl_intel_thread.so /usr/local/lib/pytorch/
-COPY --from=pytorch_image /opt/conda/lib/libmkl_intel_thread.so /usr/local/lib/pytorch/
 
 # LibTorch and Torchvision headers and libraries
 COPY --from=pytorch_image /opt/conda/lib/python3.6/site-packages/torch/include \

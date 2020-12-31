@@ -1,7 +1,6 @@
 #!/bin/bash
 NAME=$1
 : ${NAME:=donal}
-
 if [ ! "$(docker ps -q -f name=${NAME})" ]; then
     echo "No running container found."
     if [ "$(docker ps -aq -f status=exited -f name=${NAME})" ]; then
@@ -9,7 +8,6 @@ if [ ! "$(docker ps -q -f name=${NAME})" ]; then
         docker rm ${NAME}
     fi
     echo "Creating container with name: ${NAME}"
-    docker run --rm -it --name openvslam-server --net=host openvslam-server && \
     docker run --runtime=nvidia -it --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix/:/tmp/.X11-unix:ro \
         --volume /data/Datasets/:/dataset:ro \
         --volume /data/Vocab:/vocab:ro \
