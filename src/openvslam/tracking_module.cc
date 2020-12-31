@@ -28,7 +28,7 @@ tracking_module::tracking_module(const std::shared_ptr<config>& cfg, system* sys
       keyfrm_inserter_(cfg_->camera_->setup_type_, cfg_->true_depth_thr_, map_db, bow_db, 0, cfg_->camera_->fps_) {
     spdlog::debug("CONSTRUCT: tracking_module");
 
-    segmentation = segment::mask_rcnn("/openvslam/models/maskrcnn_resnet50_fpn.pt", true);
+    segmenter = segment::segmenter("deeplab");
 
     extractor_left_ = new feature::orb_extractor(cfg_->orb_params_);
     if (camera_->setup_type_ == camera::setup_type_t::Monocular) {
@@ -86,7 +86,7 @@ Mat44_t tracking_module::track_monocular_image(const cv::Mat& img, const double 
     util::convert_to_grayscale(img_gray_, camera_->color_order_);
 
     // Get mask
-    cv::Mat new_mask = segmentation.get_segmentation_mask(img_gray_);
+    cv::Mat new_mask = segmenter.segment(img_gray_);
     (void) mask;
     // auto new_mask = mask.clone();
     

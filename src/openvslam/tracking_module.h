@@ -7,7 +7,7 @@
 #include "openvslam/module/relocalizer.h"
 #include "openvslam/module/keyframe_inserter.h"
 #include "openvslam/module/frame_tracker.h"
-#include "openvslam/segment/mask_rcnn.h"
+#include "openvslam/segment/segmenter.h"
 #include <mutex>
 
 #include <opencv2/core/core.hpp>
@@ -252,7 +252,7 @@ protected:
     // Semantic segmentation
 
     //! segmenter
-    segment::mask_rcnn segmentation;
+    segment::segmenter segmenter;
 };
 
 } // namespace openvslam

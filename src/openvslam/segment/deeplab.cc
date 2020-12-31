@@ -1,13 +1,13 @@
-#include "openvslam/segment/mask_rcnn.h"
+#include "openvslam/segment/deeplab.h"
 
 namespace openvslam {
 namespace segment {
 
 
-mask_rcnn::mask_rcnn(pytorch::model model) : base_model(model) {
+deeplab::deeplab(pytorch::model model) : base_model(model) {
 }
 
-cv::Mat mask_rcnn::get_segmentation_mask(const cv::Mat& input_image) {
+cv::Mat deeplab::get_segmentation_mask(const cv::Mat& input_image) {
     auto device = _model.get_device();
     torch::Tensor tensor_image;
     auto image_placeholder = input_image.clone();
